@@ -7,7 +7,6 @@
 
 
 function! brainfuck#exec()
-    call s:log("bf ok")
     let Interpreter = s:InitInterpreter(s:get_sourcecode())
     call Interpreter.execute()
 endfunction
@@ -40,8 +39,18 @@ function! s:InitBuf()
     let Buf.ptr = 0
 
     function Buf.move(n)
-        let n = empty(a:n) ? a:n : 0
-        let self.ptr += n
+        let self.ptr += a:n
+        call self.fullfill()
+    endfunction
+
+    function Buf.fullfill()
+        if self.ptr >= len(self.array)
+            let cursor = len(self.array)
+            while cursor <= self.ptr
+                call add(self.array, 0)
+                let cursor += 1
+            endwhile
+        endif
     endfunction
 
     function Buf.increment()
@@ -60,13 +69,8 @@ function! s:InitBuf()
         let self.array[self.ptr] = val
     endfunction
 
-    function Buf.dump(start, end)
-        let start = empty(a:start) ? self.ptr : a:start
-        let end = empty(a:end) ? 1 : a:end
-        if start > self.ptr
-            call s:warning('数组越界')
-        endif
-        return self.array[start:end]
+    function Buf.dump()
+        return self.array[self.ptr]
     endfunction
 
     function Buf.str()
@@ -99,7 +103,6 @@ function! s:InitProgram(source_code)
     endfunction
 
     function Program.eof()
-        call s:log(56)
         return self.pos == len(self.program)
     endfunction
 
@@ -149,7 +152,7 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.handle_output_byte()
-        call execute("echon \"" . self.buffer.dump() ."\"")
+        exec "echon \"" . self.buffer.dump() . "\""
     endfunction
 
     function Interpreter.handle_input_byte()
@@ -158,37 +161,36 @@ function! s:InitInterpreter(source_code)
 
     function Interpreter.handle_jump_forward()
         if self.buffer.current == 0
-            let count = 1
-            while count > 0
-                call self.__dump_state("__handle_jump_forward: (count : ". count .")")
+            let cursor = 1
+            while cursor > 0
+                call self.__dump_state("__handle_jump_forward: (count : ". cursor .")")
                 call self.program.advance(1)
                 if self.program.current() == self.JUMP_FORWARD
-                    let count += 1
+                    let cursor += 1
                 elseif self.program.current() == self.JUMP_BACKWARD
-                    let count -= 1
+                    let cursor -= 1
                 endif
             endwhile
         endif
     endfunction
 
     function Interpreter.handle_jump_backward()
-        if self.buffer.current() ！= 0
-            let count = 1
-            while count != 0
-                call self.__dump_state("__handle_jump_backward: (count : ". count .")")
+        if self.buffer.current() != 0
+            let cursor = 1
+            while cursor != 0
+                call self.__dump_state("__handle_jump_backward: (count : ". cursor .")")
                 call self.program.advance(-1)
                 if self.program.current() == self.JUMP_BACKWARD
-                    let count += 1
+                    let cursor += 1
                 elseif self.program.current() == self.JUMP_FORWARD
-                    let count -= 1
+                    let cursor -= 1
                 endif
             endwhile
         endif
     endfunction
 
     function Interpreter.__dump_state(msg)
-        call s:log(string(self.buffer.dump(0,10)))
-        " echon a:msg
+        " call s:log(string(self.buffer.dump()))
     endfunction
 
     function Interpreter.execute()
@@ -201,23 +203,20 @@ function! s:InitInterpreter(source_code)
         let op_handler[self.INPUT_BYTE]    = self.handle_input_byte
         let op_handler[self.JUMP_FORWARD]  = self.handle_jump_forward
         let op_handler[self.JUMP_BACKWARD] = self.handle_jump_backward
-        
+
         let g:kk = self
 
         while !self.program.eof()
-            " call self.__dump_state("execute:")
-
             let Handler = get(op_handler, self.program.current())
             call Handler()
             call self.program.advance(1)
-            call s:log(self.program.pos)
+            " call s:log(self.program.pos)
         endwhile
     endfunction
 
-    call s:log(a:source_code)
+    " call s:log(a:source_code)
     return Interpreter
 endfunction
-
 
 function! s:log(msg)
     call s:msg(a:msg, "Question")
