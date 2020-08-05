@@ -3,14 +3,13 @@
 " Author:       @jayli <http://jayli.github.io>
 " Description:  Event handler and plugin starting up
 "
-" ╦  ╦┬┌┬┐  ╔═╗┌─┐┌─┐┬ ┬╔╦╗┌─┐┌┐ ┬ ┬┌─┐┌─┐┌─┐┬─┐
-" ╚╗╔╝││││  ║╣ ├─┤└─┐└┬┘ ║║├┤ ├┴┐│ ││ ┬│ ┬├┤ ├┬┘
-"  ╚╝ ┴┴ ┴  ╚═╝┴ ┴└─┘ ┴ ═╩╝└─┘└─┘└─┘└─┘└─┘└─┘┴└─
+" brainfuck
 
 
 function! brainfuck#exec()
-    call s:Log_Msg('bf ok')
-    call brainfuck#interpreter(brainfuck#get_sourcecode())
+    call s:log("bf ok")
+    let Interpreter = s:InitInterpreter(s:get_sourcecode())
+    call Interpreter.execute()
 endfunction
 
 " A more robust trim function {{{
@@ -23,7 +22,7 @@ function! brainfuck#trim(str)
     return ""
 endfunction "}}}
 
-function! brainfuck#get_sourcecode()
+function! s:get_sourcecode()
     let sourcecode_list= []
     let lines = getbufline(bufnr(''), 1 ,"$")
     for line in lines
@@ -35,246 +34,204 @@ function! brainfuck#get_sourcecode()
     return join(sourcecode_list, "")
 endfunction
 
-function! s:InitBrainFuckBuf()
-    " if !exists('g:BrainFuckBuf')
-    "     let g:BrainFuckBuf = {}
-    " endif
+function! s:InitBuf()
     let Buf = {}
     let Buf.array = [0]
     let Buf.ptr = 0
-    function! Buf.foo() dict
-        call s:Log_Msg('done')
+
+    function Buf.move(n)
+        let n = empty(a:n) ? a:n : 0
+        let self.ptr += n
     endfunction
+
+    function Buf.increment()
+        let self.array[self.ptr] += 1
+    endfunction
+
+    function Buf.decrement()
+        let self.array[self.ptr] -= 1
+    endfunction
+
+    function Buf.current()
+        return self.array[self.ptr]
+    endfunction
+
+    function Buf.store(val)
+        let self.array[self.ptr] = val
+    endfunction
+
+    function Buf.dump(start, end)
+        let start = empty(a:start) ? self.ptr : a:start
+        let end = empty(a:end) ? 1 : a:end
+        if start > self.ptr
+            call s:warning('数组越界')
+        endif
+        return self.array[start:end]
+    endfunction
+
+    function Buf.str()
+        return "ptr: " . self.ptr . " , value:" . self.current()
+    endfunction
+
+    function Buf.input()
+        let ipt = input("")
+        if ipt == "" || len(ipt) > 1
+            call s:warning("输入为空或者大于一个字符")
+            finish
+        endif
+        call self.store(ipt)
+    endfunction
+
     return Buf
 endfunction
 
+function! s:InitProgram(source_code)
+    let Program = {}
+    let Program.program = a:source_code
+    let Program.pos = 0
 
+    function! Program.advance(n)
+        let self.pos += a:n
+    endfunction
+
+    function Program.current()
+        return self.program[self.pos]
+    endfunction
+
+    function Program.eof()
+        call s:log(56)
+        return self.pos == len(self.program)
+    endfunction
+
+    function Program.str()
+        return "pos: " . self.pos . " , op:" . self.current()
+    endfunction
+
+    return Program
+endfunction
 
 function! brainfuck#interpreter(source_code)
-    let g:BrainFuckBuf = s:InitBrainFuckBuf()
-
-    let INC_PTR       = ">"
-    let DEC_PTR       = "<"
-    let INC_BYTE      = "+"
-    let DEC_BYTE      = "-"
-    let OUTPUT_BYTE   = "."
-    let INPUT_BYTE    = ","
-    let JUMP_FORWARD  = "["
-    let JUMP_BACKWARD = "]"
-
-    call s:Log_Msg(a:source_code)
+    return s:InitInterpreter(a:source_code)
 endfunction
 
-" Launch plugin {{{
-function! easydebugger#Enable()
-    call s:Global_Setup()
-    call s:Bind_Nor_Map_Keys()
-    call s:Build_Command()
-    call s:Bind_Term_Map_Keys()
-endfunction " }}}
 
-" Create global object for runtime {{{
-function! s:Global_Setup()
-    " g:debugger                Debugger global object, created with terminal
-    "                           launched
-    " g:language_setup          Current language configure, see
-    "                           debugger/{language}.vim to get more infomation.
-    " g:Debug_Lang_Supported    Language list supported by this plugin.
-    " g:None_Lang_Sp_Msg        Non supported language warning message.
+function! s:InitInterpreter(source_code)
 
-    let g:Debug_Lang_Supported = ["javascript","go","python"]
-    let g:None_Lang_Sp_Msg = "Not support current filetype, ".
-                            \ "or move cursor to sourcecode/terminal window"
-endfunction " }}}
+    let Interpreter = {
+        \   "INC_PTR"        : ">",
+        \   "DEC_PTR"        : "<",
+        \   "INC_BYTE"       : "+",
+        \   "DEC_BYTE"       : "-",
+        \   "OUTPUT_BYTE"    : ".",
+        \   "INPUT_BYTE"     : ",",
+        \   "JUMP_FORWARD"   : "[",
+        \   "JUMP_BACKWARD"  : "]"
+        \ }
 
-" Rebind terminal key-maps command after entering each buffer {{{
-function! easydebugger#Bind_Term_MapKeys()
-    call s:Bind_Term_Map_Keys()
-endfunction " }}}
+    let Interpreter.buffer = s:InitBuf()
+    let Interpreter.program = s:InitProgram(a:source_code)
 
-" Bind only once when vim_starting for normal mod {{{
-function! s:Bind_Nor_Map_Keys()
-    " Shortcut key defination
-    " Launch debugger plugin
-    nnoremap <silent> <Plug>EasyDebuggerInspect :call easydebugger#Inspect_Init()<CR>
-    nnoremap <silent> <Plug>EasyDebuggerWebInspect :call easydebugger#WebInspect_Init()<CR>
-    " Debuging key-maps
-    nnoremap <silent> <Plug>EasyDebuggerContinue :call easydebugger#Inspect_Cont()<CR>
-    nnoremap <silent> <Plug>EasyDebuggerNext :call easydebugger#Inspect_Next()<CR>
-    nnoremap <silent> <Plug>EasyDebuggerStepIn :call easydebugger#Inspect_Step()<CR>
-    nnoremap <silent> <Plug>EasyDebuggerStepOut :call easydebugger#Inspect_Out()<CR>
-    nnoremap <silent> <Plug>EasyDebuggerPause :call easydebugger#Inspect_Pause()<CR>
-    " Set break point
-    nnoremap <silent> <Plug>EasyDebuggerSetBreakPoint :call easydebugger#Inspect_Set_BreakPoint()<CR>
-    " Exit debuging
-    nnoremap <silent> <Plug>EasyDebuggerExit :call easydebugger#Inspect_Exit()<CR>
-    " Open local Variables window and call stack window
-    nnoremap <silent> <Plug>EasyDebuggerLocalvarWindow :call runtime#Create_VarWindow()<CR>
-    nnoremap <silent> <Plug>EasyDebuggerStackWindow :call runtime#Create_StackWindow()<CR>
-endfunction " }}}
 
-" Rebind key-maps after entering each buffer {{{
-function! s:Bind_Term_Map_Keys()
-    exec "tnoremap <silent> <Plug>EasyDebuggerContinue ".easydebugger#Get_CtrlCmd('ctrl_cmd_continue')
-    exec "tnoremap <silent> <Plug>EasyDebuggerNext ".easydebugger#Get_CtrlCmd('ctrl_cmd_next')
-    exec "tnoremap <silent> <Plug>EasyDebuggerStepIn ".easydebugger#Get_CtrlCmd('ctrl_cmd_stepin')
-    exec "tnoremap <silent> <Plug>EasyDebuggerStepOut ".easydebugger#Get_CtrlCmd('ctrl_cmd_stepout')
-    exec "tnoremap <silent> <Plug>EasyDebuggerPause ".easydebugger#Get_CtrlCmd('ctrl_cmd_pause')
-    exec "tnoremap <silent> <Plug>EasyDebuggerExit ".easydebugger#Get_CtrlCmd('ctrl_cmd_exit')
-endfunction " }}}
+    function Interpreter.handle_inc_ptr()
+        call self.buffer.move(1)
+    endfunction
 
-" Command defination {{{
-function! s:Build_Command()
-    command! -nargs=0 -complete=command Debugger       call easydebugger#Inspect_Init()
-    command! -nargs=0 -complete=command InspectInit    call easydebugger#Inspect_Init()
-    command! -nargs=0 -complete=command WebInspectInit call easydebugger#WebInspect_Init()
-    command! -nargs=0 -complete=command InspectCont    call easydebugger#Inspect_Cont()
-    command! -nargs=0 -complete=command InspectNext    call easydebugger#Inspect_Next()
-    command! -nargs=0 -complete=command InspectStep    call easydebugger#Inspect_Step()
-    command! -nargs=0 -complete=command InspectOut     call easydebugger#Inspect_Out()
-    command! -nargs=0 -complete=command InspectPause   call easydebugger#Inspect_Pause()
-    command! -nargs=0 -complete=command InspectExit    call easydebugger#Inspect_Exit()
-    command! -nargs=0 -complete=command ExitDebugger   call easydebugger#Inspect_Exit()
-    command! -nargs=0 -complete=command StackWindow    call runtime#Create_StackWindow()
-    command! -nargs=0 -complete=command LocalvarWindow call runtime#Create_VarWindow()
-    command! -nargs=0 -complete=command BreakPointSetting call easydebugger#Inspect_Set_BreakPoint()
-endfunction " }}}
+    function Interpreter.handle_dec_ptr()
+        call self.buffer.move(-1)
+    endfunction
 
-function! easydebugger#Exit_SourceCode() " {{{
-    if runtime#Term_Is_Running() && g:debugger.original_winid  == bufwinid(bufnr(""))
-        call easydebugger#Inspect_Exit()
-        call execute("split " . expand("%:p"), "silent!")
-    endif
-endfunction " }}}
+    function Interpreter.handle_inc_byte()
+        call self.buffer.increment()
+    endfunction
 
-" Init language configuration according to filetype after entering a new buffer {{{
-function! easydebugger#Create_Lang_Setup()
-    call s:Create_Lang_Setup()
-endfunction " }}}
+    function Interpreter.handle_dec_byte()
+        call self.buffer.decrement()
+    endfunction
 
-" 同上 {{{
-function! s:Create_Lang_Setup()
-    " Init g:language_setup
-    if !exists("g:Debug_Lang_Supported")
-        call s:Global_Setup()
-    endif
+    function Interpreter.handle_output_byte()
+        call execute("echon \"" . self.buffer.dump() ."\"")
+    endfunction
 
-    if exists("g:debugger") && term_getstatus(get(g:debugger,'debugger_window_name')) == 'running'
-        " If debugger is running or cursor is in stack window or localvar window
-        let ft = g:debugger.language
-        call execute('let g:language_setup = debugger#'. ft .'#Setup()' )
-        if exists("g:language_setup")
-            let g:language_setup.language = ft
+    function Interpreter.handle_input_byte()
+        " todo
+    endfunction
+
+    function Interpreter.handle_jump_forward()
+        if self.buffer.current == 0
+            let count = 1
+            while count > 0
+                call self.__dump_state("__handle_jump_forward: (count : ". count .")")
+                call self.program.advance(1)
+                if self.program.current() == self.JUMP_FORWARD
+                    let count += 1
+                elseif self.program.current() == self.JUMP_BACKWARD
+                    let count -= 1
+                endif
+            endwhile
         endif
-    elseif index(g:Debug_Lang_Supported, s:Get_Filetype()) >= 0
-        " If current filetype is supported
-        call execute('let g:language_setup = debugger#'. s:Get_Filetype() .'#Setup()' )
-        " call util#log(bufwinid(bufnr("")))
-        if exists("g:language_setup")
-            let g:language_setup.language = s:Get_Filetype()
+    endfunction
+
+    function Interpreter.handle_jump_backward()
+        if self.buffer.current() ！= 0
+            let count = 1
+            while count != 0
+                call self.__dump_state("__handle_jump_backward: (count : ". count .")")
+                call self.program.advance(-1)
+                if self.program.current() == self.JUMP_BACKWARD
+                    let count += 1
+                elseif self.program.current() == self.JUMP_FORWARD
+                    let count -= 1
+                endif
+            endwhile
         endif
-    else
-        let g:language_setup = 0
-        unlet g:language_setup
-    endif
-endfunction "}}}
+    endfunction
 
-function! easydebugger#Get_CtrlCmd(cmd) "{{{
-    call s:Create_Lang_Setup()
-    if !exists('g:language_setup') || !s:Language_Supported(get(g:language_setup,"language")) 
-        return "should_execute_nothing1"
-    endif
-    if has_key(g:language_setup, a:cmd)
-        return get(g:language_setup, a:cmd) . "<CR>"
-    else
-        return "should_execute_nothing"
-    endif
-endfunction "}}}
+    function Interpreter.__dump_state(msg)
+        call s:log(string(self.buffer.dump(0,10)))
+        " echon a:msg
+    endfunction
 
-function! easydebugger#Inspect_Init() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call get(g:language_setup,'InspectInit')()
-endfunction "}}}
+    function Interpreter.execute()
+        let op_handler = {}
+        let op_handler[self.INC_PTR]       = self.handle_inc_ptr
+        let op_handler[self.DEC_PTR]       = self.handle_dec_ptr
+        let op_handler[self.INC_BYTE]      = self.handle_inc_byte
+        let op_handler[self.DEC_BYTE]      = self.handle_dec_byte
+        let op_handler[self.OUTPUT_BYTE]   = self.handle_output_byte
+        let op_handler[self.INPUT_BYTE]    = self.handle_input_byte
+        let op_handler[self.JUMP_FORWARD]  = self.handle_jump_forward
+        let op_handler[self.JUMP_BACKWARD] = self.handle_jump_backward
+        
+        let g:kk = self
 
-function! easydebugger#WebInspect_Init() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call get(g:language_setup,'WebInspectInit')()
-endfunction "}}}
+        while !self.program.eof()
+            " call self.__dump_state("execute:")
 
-function! easydebugger#Inspect_Cont() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call runtime#Mark_Cursor_Position()
-    call get(g:language_setup,'InspectCont')()
-endfunction "}}}
+            let Handler = get(op_handler, self.program.current())
+            call Handler()
+            call self.program.advance(1)
+            call s:log(self.program.pos)
+        endwhile
+    endfunction
 
-function! easydebugger#Inspect_Next() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call runtime#Mark_Cursor_Position()
-    call get(g:language_setup,'InspectNext')()
-endfunction "}}}
-
-function! easydebugger#Inspect_Step() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call runtime#Mark_Cursor_Position()
-    call get(g:language_setup,'InspectStep')()
-endfunction "}}}
-
-function! easydebugger#Inspect_Out() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call runtime#Mark_Cursor_Position()
-    call get(g:language_setup,'InspectOut')()
-endfunction "}}}
-
-function! easydebugger#Inspect_Pause() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call runtime#Mark_Cursor_Position()
-    call get(g:language_setup,'InspectPause')()
-endfunction "}}}
-
-function! easydebugger#Inspect_Set_BreakPoint() "{{{
-    call s:Create_Lang_Setup()
-    if !s:Language_Supported() || !exists('g:language_setup')
-        return util#Log_Msg(g:None_Lang_Sp_Msg)
-    endif
-    call get(g:language_setup,'InspectSetBreakPoint')()
-endfunction "}}}
-
-function! easydebugger#Inspect_Exit() " {{{
-    call runtime#Close_Term()
-endfunction " }}}
-
-" If current filetype is supported {{{
-function! s:Language_Supported(...)
-    " Exclude quickfix window and tagbar
-    let ft = exists(a:0) ? a:0 : s:Get_Filetype()
-    return index(extend(deepcopy(g:Debug_Lang_Supported),['qf','tagbar']), ft) >= 0 ? 1 : 0
-endfunction "}}}
-
-function! s:Get_Filetype() "{{{
-    return &filetype == "javascript.jsx" ? "javascript" : &filetype
-endfunction "}}}
-
-function! s:Log_Msg(msg)
-    call util#Log_Msg(a:msg)
+    call s:log(a:source_code)
+    return Interpreter
 endfunction
+
+
+function! s:log(msg)
+    call s:msg(a:msg, "Question")
+endfunction
+
+" print warning msg {{{
+function! s:waring(msg)
+    return s:msg(a:msg, "WarningMsg")
+endfunction "}}}
+
+" EchoMsg {{{
+function! s:msg(msg, style_group)
+    exec "echohl " . a:style_group
+    echom '>>> '. a:msg
+    echohl NONE
+    return a:msg
+endfunction " }}}
