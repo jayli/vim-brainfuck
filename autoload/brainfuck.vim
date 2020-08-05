@@ -152,7 +152,7 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.handle_output_byte()
-        exec "echon \"" . self.buffer.dump() . "\""
+        exec "echon \" " . self.buffer.dump() . "\""
     endfunction
 
     function Interpreter.handle_input_byte()
