@@ -152,7 +152,7 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.handle_output_byte()
-        exec "echon \" " . self.buffer.dump() . "\""
+        exec "echon \"" . nr2char(self.buffer.dump()) . "\""
     endfunction
 
     function Interpreter.handle_input_byte()
@@ -190,7 +190,12 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.__dump_state(msg)
-        " call s:log(string(self.buffer.dump()))
+        return
+        call s:log(a:msg)
+        let t_array = deepcopy(self.buffer.array)
+        let t_ptr = self.buffer.ptr
+        let t_array[t_ptr] = "*" . string(t_array[t_ptr])
+        call s:log(string(t_array))
     endfunction
 
     function Interpreter.execute()
@@ -208,6 +213,7 @@ function! s:InitInterpreter(source_code)
 
         while !self.program.eof()
             let Handler = get(op_handler, self.program.current())
+            " call self.__dump_state("")
             call Handler()
             call self.program.advance(1)
             " call s:log(self.program.pos)
