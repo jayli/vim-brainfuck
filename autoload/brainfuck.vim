@@ -7,11 +7,17 @@
 
 
 function! brainfuck#exec()
-    let Interpreter = s:InitInterpreter(s:get_sourcecode())
+    let Interpreter = s:InitInterpreter(s:GetSourceCode())
     call Interpreter.execute()
 endfunction
 
-function! s:get_sourcecode()
+function! s:ParseComment(line)
+    " todo here
+    let line = trim(a:line)
+    let line = substitute(line,"","","g")
+endfunction
+
+function! s:GetSourceCode()
     let sourcecode_list= []
     let lines = getbufline(bufnr(''), 1 ,"$")
     for line in lines
