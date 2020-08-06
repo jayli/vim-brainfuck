@@ -16,5 +16,5 @@ endif
 
 if has( 'vim_starting' )
     command! -nargs=0 -complete=command BrainFuck call brainfuck#exec()
-    autocmd BufRead,BufNewFile *.bf set filetype=javascript
+    autocmd BufRead,BufNewFile *.bf set filetype=text
 endif
