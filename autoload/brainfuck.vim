@@ -5,16 +5,15 @@
 "
 " brainfuck
 
-
 function! brainfuck#exec()
     let Interpreter = s:InitInterpreter(s:GetSourceCode())
     call Interpreter.execute()
 endfunction
 
-function! s:ParseComment(line)
-    " todo here
-    let line = trim(a:line)
-    let line = substitute(line,"","","g")
+function! s:ClearComment(line)
+    let line = substitute(a:line,"[^><+-.,\\[\\]]\\+", "", "g")
+    let line = trim(line)
+    return line
 endfunction
 
 function! s:GetSourceCode()
@@ -24,7 +23,7 @@ function! s:GetSourceCode()
         if trim(line) == ""
             continue
         endif
-        call add(sourcecode_list, trim(split(line,'//')[0]))
+        call add(sourcecode_list, s:ClearComment(line))
     endfor
     return join(sourcecode_list, "")
 endfunction
@@ -62,7 +61,7 @@ function! s:InitBuf()
     endfunction
 
     function Buf.store(val)
-        let self.array[self.ptr] = val
+        let self.array[self.ptr] = a:val
     endfunction
 
     function Buf.dump()
@@ -154,13 +153,14 @@ function! s:InitInterpreter(source_code)
 
     function Interpreter.handle_input_byte()
         " todo
+        call self.buffer.input()
     endfunction
 
     function Interpreter.handle_jump_forward()
         if self.buffer.current == 0
             let cursor = 1
             while cursor > 0
-                call self.__dump_state("__handle_jump_forward: (count : ". cursor .")")
+                " call self.__dump_state()
                 call self.program.advance(1)
                 if self.program.current() == self.JUMP_FORWARD
                     let cursor += 1
@@ -175,7 +175,7 @@ function! s:InitInterpreter(source_code)
         if self.buffer.current() != 0
             let cursor = 1
             while cursor != 0
-                call self.__dump_state("__handle_jump_backward: (count : ". cursor .")")
+                " call self.__dump_state()
                 call self.program.advance(-1)
                 if self.program.current() == self.JUMP_BACKWARD
                     let cursor += 1
@@ -186,9 +186,7 @@ function! s:InitInterpreter(source_code)
         endif
     endfunction
 
-    function Interpreter.__dump_state(msg)
-        return
-        call s:log(a:msg)
+    function Interpreter.__dump_state()
         let t_array = deepcopy(self.buffer.array)
         let t_ptr = self.buffer.ptr
         let t_array[t_ptr] = "*" . string(t_array[t_ptr])
@@ -210,11 +208,11 @@ function! s:InitInterpreter(source_code)
 
         while !self.program.eof()
             let Handler = get(op_handler, self.program.current())
-            " call self.__dump_state("")
             call Handler()
             call self.program.advance(1)
-            " call s:log(self.program.pos)
         endwhile
+
+        call self.__dump_state()
     endfunction
 
     " call s:log(a:source_code)
