@@ -11,24 +11,14 @@ function! brainfuck#exec()
     call Interpreter.execute()
 endfunction
 
-" A more robust trim function {{{
-function! brainfuck#trim(str)
-    if !empty(a:str)
-        let a1 = substitute(a:str, "^\\s\\+\\(.\\{\-}\\)$","\\1","g")
-        let a1 = substitute(a:str, "^\\(.\\{\-}\\)\\s\\+$","\\1","g")
-        return a1
-    endif
-    return ""
-endfunction "}}}
-
 function! s:get_sourcecode()
     let sourcecode_list= []
     let lines = getbufline(bufnr(''), 1 ,"$")
     for line in lines
-        if brainfuck#trim(line) == ""
+        if trim(line) == ""
             continue
         endif
-        call add(sourcecode_list, brainfuck#trim(split(line,'//')[0]))
+        call add(sourcecode_list, trim(split(line,'//')[0]))
     endfor
     return join(sourcecode_list, "")
 endfunction
@@ -119,6 +109,7 @@ endfunction
 
 
 function! s:InitInterpreter(source_code)
+
 
     let Interpreter = {
         \   "INC_PTR"        : ">",
