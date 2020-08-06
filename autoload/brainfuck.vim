@@ -11,7 +11,8 @@ function! brainfuck#exec()
 endfunction
 
 function! s:ClearComment(line)
-    let line = substitute(a:line,"[^><+-.,\\[\\]]\\+", "", "g")
+    let line = substitute(a:line,"\\(\/\/\\|\\w\\|\\#\\|\\*\\).\\+", "", "g")
+    let line = substitute(line, "[^><+-.,\\[\\]]", "", "g")
     let line = trim(line)
     return line
 endfunction
@@ -23,7 +24,7 @@ function! s:GetSourceCode()
         if trim(line) == ""
             continue
         endif
-        call add(sourcecode_list, s:ClearComment(line))
+        call add(sourcecode_list, substitute(s:ClearComment(line)," ","","g"))
     endfor
     return join(sourcecode_list, "")
 endfunction
@@ -115,7 +116,6 @@ endfunction
 
 function! s:InitInterpreter(source_code)
 
-
     let Interpreter = {
         \   "INC_PTR"        : ">",
         \   "DEC_PTR"        : "<",
@@ -190,7 +190,7 @@ function! s:InitInterpreter(source_code)
         let t_array = deepcopy(self.buffer.array)
         let t_ptr = self.buffer.ptr
         let t_array[t_ptr] = "*" . string(t_array[t_ptr])
-        call s:log(string(t_array))
+        call s:log(string(join(t_array, " ")))
     endfunction
 
     function Interpreter.execute()
@@ -207,7 +207,8 @@ function! s:InitInterpreter(source_code)
         let g:kk = self
 
         while !self.program.eof()
-            let Handler = get(op_handler, self.program.current())
+            let current_opt = self.program.current()
+            let Handler = get(op_handler, current_opt)
             call Handler()
             call self.program.advance(1)
         endwhile
@@ -215,7 +216,6 @@ function! s:InitInterpreter(source_code)
         call self.__dump_state()
     endfunction
 
-    " call s:log(a:source_code)
     return Interpreter
 endfunction
 
@@ -224,7 +224,7 @@ function! s:log(msg)
 endfunction
 
 " print warning msg {{{
-function! s:waring(msg)
+function! s:warning(msg)
     return s:msg(a:msg, "WarningMsg")
 endfunction "}}}
 
