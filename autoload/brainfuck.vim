@@ -190,7 +190,7 @@ function! s:InitInterpreter(source_code)
         let t_array = deepcopy(self.buffer.array)
         let t_ptr = self.buffer.ptr
         let t_array[t_ptr] = "*" . string(t_array[t_ptr])
-        call s:log(string(join(t_array, " ")))
+        call s:print_array(t_array)
     endfunction
 
     function Interpreter.execute()
@@ -235,3 +235,14 @@ function! s:msg(msg, style_group)
     echohl NONE
     return a:msg
 endfunction " }}}
+
+function! s:print_array(a)
+    exec "echon \"Buffer Length: \t". len(a:a) ."\n\""
+    exec "echon \"Buffer Array: \t\""
+    for i in a:a
+        if type(i) == type(0) || type(i) == type("")
+            exec "echon \"". i . "\""
+            exec "echon \" \""
+        endif
+    endfor
+endfunction
