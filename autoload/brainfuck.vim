@@ -17,6 +17,14 @@ function! s:ClearComment(line)
     return line
 endfunction
 
+function! s:HasInputOperator(source_code)
+    if matchstr(a:source_code, ",") == ","
+        return 1
+    elseif
+        return 0
+    endif
+endfunction
+
 function! s:GetSourceCode()
     let sourcecode_list= []
     let lines = getbufline(bufnr(''), 1 ,"$")
@@ -73,13 +81,8 @@ function! s:InitBuf()
         return "ptr: " . self.ptr . " , value:" . self.current()
     endfunction
 
-    function Buf.input()
-        let ipt = input("")
-        if ipt == "" || len(ipt) > 1
-            call s:warning("输入为空或者大于一个字符")
-            finish
-        endif
-        call self.store(ipt)
+    function Buf.input(inputstream)
+        call self.store(a:inputstream.get_one_input())
     endfunction
 
     return Buf
@@ -109,12 +112,43 @@ function! s:InitProgram(source_code)
     return Program
 endfunction
 
+function! s:InitInputStream(source_code)
+    let InputStream = {}
+    let InputStream.source_code = a:source_code
+    let InputStream.array = []
+    let InputStream.cursor = 0
+
+    function InputStream.input()
+        if !s:HasInputOperator(self.source_code)
+            return
+        endif
+
+        let ipt = input("Input: ")
+        let self.array = str2list(ipt)
+    endfunction
+
+    function InputStream.get_one_input()
+        if len(self.array) >= 1
+            let val = self.array[0]
+            let self.array = self.array[1:]
+            return val
+        else
+            call self.input()
+            return self.get_one_input()
+        endif
+    endfunction
+
+    return InputStream
+
+endfunction
+
 function! brainfuck#interpreter(source_code)
     return s:InitInterpreter(a:source_code)
 endfunction
 
 
 function! s:InitInterpreter(source_code)
+
 
     let Interpreter = {
         \   "INC_PTR"        : ">",
@@ -129,7 +163,9 @@ function! s:InitInterpreter(source_code)
 
     let Interpreter.buffer = s:InitBuf()
     let Interpreter.program = s:InitProgram(a:source_code)
+    let Interpreter.inputstream = s:InitInputStream(a:source_code)
 
+    call Interpreter.inputstream.input() " TODO 这里注释掉，逻辑上应该没啥问题，但实际上输入提示符不显示，不知为何
 
     function Interpreter.handle_inc_ptr()
         call self.buffer.move(1)
@@ -152,8 +188,7 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.handle_input_byte()
-        " todo
-        call self.buffer.input()
+        call self.buffer.input(self.inputstream)
     endfunction
 
     function Interpreter.handle_jump_forward()
@@ -237,7 +272,7 @@ function! s:msg(msg, style_group)
 endfunction " }}}
 
 function! s:print_array(a)
-    exec "echon \"Buffer Length: \t". len(a:a) ."\n\""
+    exec "echon \"\nBuffer Length: \t". len(a:a) ."\n\""
     exec "echon \"Buffer Array: \t\""
     for i in a:a
         if type(i) == type(0) || type(i) == type("")
