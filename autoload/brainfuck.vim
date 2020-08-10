@@ -18,9 +18,9 @@ function! s:ClearComment(line)
 endfunction
 
 function! s:HasInputOperator(source_code)
-    if matchstr(a:source_code, ",") == ","
+    if index(str2list(a:source_code), 44) >= 0
         return 1
-    elseif
+    else
         return 0
     endif
 endfunction
@@ -38,6 +38,9 @@ function! s:GetSourceCode()
 endfunction
 
 function! s:InitBuf()
+    " TODO here
+    " 这里的加减方法应该是位的加减，比如0 - 1 = 255
+    " https://www.jianshu.com/p/a7e7f2b26125
     let Buf = {}
     let Buf.array = [0]
     let Buf.ptr = 0
@@ -77,9 +80,22 @@ function! s:InitBuf()
         return self.array[self.ptr]
     endfunction
 
-    function Buf.str()
-        return "ptr: " . self.ptr . " , value:" . self.current()
+    function Buf.log()
+        " call s:log("Buffer Length: " . len(self.array))
+
+        let buf_msg = "Buffer Array:  "
+        let i = 0
+        while i < len(self.array)
+            if i == self.ptr
+                let buf_msg = buf_msg . "*"
+            endif
+            let buf_msg = buf_msg . string(self.array[i])
+            let buf_msg = buf_msg . " "
+            let i += 1
+        endwhile
+        call s:log(buf_msg)
     endfunction
+
 
     function Buf.input(inputstream)
         call self.store(a:inputstream.get_one_input())
@@ -107,6 +123,20 @@ function! s:InitProgram(source_code)
 
     function Program.str()
         return "pos: " . self.pos . " , op:" . self.current()
+    endfunction
+
+    function Program.log()
+        let program_msg = "Program:". join(repeat([" "], 7),"")
+        let i = 0
+        while i < len(self.program)
+            if i == self.pos
+                let program_msg = program_msg . "(" . self.program[i] . ")"
+            else
+                let program_msg = program_msg . self.program[i]
+            endif
+            let i += 1
+        endwhile
+        call s:log(program_msg)
     endfunction
 
     return Program
@@ -195,7 +225,6 @@ function! s:InitInterpreter(source_code)
         if self.buffer.current == 0
             let cursor = 1
             while cursor > 0
-                " call self.__dump_state()
                 call self.program.advance(1)
                 if self.program.current() == self.JUMP_FORWARD
                     let cursor += 1
@@ -210,7 +239,6 @@ function! s:InitInterpreter(source_code)
         if self.buffer.current() != 0
             let cursor = 1
             while cursor != 0
-                " call self.__dump_state()
                 call self.program.advance(-1)
                 if self.program.current() == self.JUMP_BACKWARD
                     let cursor += 1
@@ -221,11 +249,10 @@ function! s:InitInterpreter(source_code)
         endif
     endfunction
 
-    function Interpreter.__dump_state()
-        let t_array = deepcopy(self.buffer.array)
-        let t_ptr = self.buffer.ptr
-        let t_array[t_ptr] = "*" . string(t_array[t_ptr])
-        call s:print_array(t_array)
+    function Interpreter.log()
+        call s:warning('====== Interpreter State ======')
+        call self.program.log()
+        call self.buffer.log()
     endfunction
 
     function Interpreter.execute()
@@ -245,10 +272,13 @@ function! s:InitInterpreter(source_code)
             let current_opt = self.program.current()
             let Handler = get(op_handler, current_opt)
             call Handler()
+            " call self.log()
             call self.program.advance(1)
         endwhile
 
-        call self.__dump_state()
+        call self.log()
+
+        call s:warning('====== EOF ======')
     endfunction
 
     return Interpreter
