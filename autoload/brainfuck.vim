@@ -62,10 +62,18 @@ function! s:InitBuf()
 
     function Buf.increment()
         let self.array[self.ptr] += 1
+        " todo 这里需要更多测试
+        if self.array[self.ptr] >= 255
+            let self.array[self.ptr] = 0
+        endif
     endfunction
 
     function Buf.decrement()
         let self.array[self.ptr] -= 1
+        " todo 这里需要更多测试
+        if self.array[self.ptr] < 0
+            let self.array[self.ptr] = 255
+        endif
     endfunction
 
     function Buf.current()
