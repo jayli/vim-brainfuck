@@ -154,13 +154,13 @@ function! s:InitInputStream(source_code)
     let InputStream = {}
     let InputStream.source_code = a:source_code
     let InputStream.array = []
-    let InputStream.cursor = 0
 
     function InputStream.input()
         if !s:HasInputOperator(self.source_code)
             return
         endif
 
+        call execute('redraw','silent!')
         let ipt = input("Input: ")
         let self.array = str2list(ipt)
     endfunction
@@ -222,7 +222,7 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.handle_output_byte()
-        exec "echon \"" . nr2char(self.buffer.dump()) . "\""
+        echom "" . nr2char(self.buffer.dump())
     endfunction
 
     function Interpreter.handle_input_byte()
@@ -309,13 +309,3 @@ function! s:msg(msg, style_group)
     return a:msg
 endfunction " }}}
 
-function! s:print_array(a)
-    exec "echon \"\nBuffer Length: \t". len(a:a) ."\n\""
-    exec "echon \"Buffer Array: \t\""
-    for i in a:a
-        if type(i) == type(0) || type(i) == type("")
-            exec "echon \"". i . "\""
-            exec "echon \" \""
-        endif
-    endfor
-endfunction
