@@ -1,13 +1,14 @@
-
-" File:         autoload/easydebugger.vim
+" File:         autoload/brainfuck.vim
 " Author:       @jayli <http://jayli.github.io>
-" Description:  Event handler and plugin starting up
-"
-" brainfuck
+" Description:  A Brainfuck Compiler for Vim
 
 function! brainfuck#exec()
     let Interpreter = s:InitInterpreter(s:GetSourceCode())
     call Interpreter.execute()
+endfunction
+
+function! brainfuck#interpreter(source_code)
+    return s:InitInterpreter(a:source_code)
 endfunction
 
 function! s:ClearComment(line)
@@ -18,11 +19,7 @@ function! s:ClearComment(line)
 endfunction
 
 function! s:HasInputOperator(source_code)
-    if index(str2list(a:source_code), 44) >= 0
-        return 1
-    else
-        return 0
-    endif
+    return index(str2list(a:source_code), 44) >= 0 ? 1 : 0
 endfunction
 
 function! s:GetSourceCode()
@@ -89,8 +86,6 @@ function! s:InitBuf()
     endfunction
 
     function Buf.log()
-        " call s:log("Buffer Length: " . len(self.array))
-
         let buf_msg = "Buffer Array:  "
         let i = 0
         while i < len(self.array)
@@ -103,7 +98,6 @@ function! s:InitBuf()
         endwhile
         call s:log(buf_msg)
     endfunction
-
 
     function Buf.input(inputstream)
         call self.store(a:inputstream.get_one_input())
@@ -160,9 +154,9 @@ function! s:InitInputStream(source_code)
             return
         endif
 
-        call execute('redraw','silent!')
         let ipt = input("Input: ")
         let self.array = str2list(ipt)
+        redraw
     endfunction
 
     function InputStream.get_one_input()
@@ -177,16 +171,9 @@ function! s:InitInputStream(source_code)
     endfunction
 
     return InputStream
-
 endfunction
-
-function! brainfuck#interpreter(source_code)
-    return s:InitInterpreter(a:source_code)
-endfunction
-
 
 function! s:InitInterpreter(source_code)
-
 
     let Interpreter = {
         \   "INC_PTR"        : ">",
@@ -202,8 +189,6 @@ function! s:InitInterpreter(source_code)
     let Interpreter.buffer = s:InitBuf()
     let Interpreter.program = s:InitProgram(a:source_code)
     let Interpreter.inputstream = s:InitInputStream(a:source_code)
-
-    call Interpreter.inputstream.input() " TODO 这里注释掉，逻辑上应该没啥问题，但实际上输入提示符不显示，不知为何
 
     function Interpreter.handle_inc_ptr()
         call self.buffer.move(1)
@@ -222,7 +207,7 @@ function! s:InitInterpreter(source_code)
     endfunction
 
     function Interpreter.handle_output_byte()
-        echom "" . nr2char(self.buffer.dump())
+        echon "" . nr2char(self.buffer.dump())
     endfunction
 
     function Interpreter.handle_input_byte()
@@ -274,18 +259,15 @@ function! s:InitInterpreter(source_code)
         let op_handler[self.JUMP_FORWARD]  = self.handle_jump_forward
         let op_handler[self.JUMP_BACKWARD] = self.handle_jump_backward
 
-        let g:kk = self
-
         while !self.program.eof()
             let current_opt = self.program.current()
             let Handler = get(op_handler, current_opt)
             call Handler()
-            " call self.log()
             call self.program.advance(1)
+            " call self.log()
         endwhile
 
         call self.log()
-
         call s:warning('====== EOF ======')
     endfunction
 
@@ -296,16 +278,13 @@ function! s:log(msg)
     call s:msg(a:msg, "Question")
 endfunction
 
-" print warning msg {{{
 function! s:warning(msg)
     return s:msg(a:msg, "WarningMsg")
-endfunction "}}}
+endfunction
 
-" EchoMsg {{{
 function! s:msg(msg, style_group)
     exec "echohl " . a:style_group
     echom '>>> '. a:msg
     echohl NONE
     return a:msg
-endfunction " }}}
-
+endfunction
