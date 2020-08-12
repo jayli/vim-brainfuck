@@ -38,7 +38,7 @@ function! s:InitBuf()
 
     " ASCII   255
     " Unicode 65535
-    let Buf.bit = 65535
+    let Buf.bit = 255
 
     function Buf.move(n)
         let self.ptr += a:n
