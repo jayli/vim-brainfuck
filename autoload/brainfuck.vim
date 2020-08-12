@@ -1,6 +1,7 @@
 " File:         autoload/brainfuck.vim
 " Author:       @jayli <http://jayli.github.io>
 " Description:  A Brainfuck Compiler for Vim
+" Basci Useage: https://gist.github.com/robbielynch/e611442ca2d056f3b78f
 
 function! brainfuck#exec()
     let Interpreter = s:InitInterpreter(s:GetSourceCode())
