@@ -19,10 +19,51 @@ For example, Copy this program to your vim editor and exec ":BrainFuck"
 
 It will output "Hello World!".
 
+BF basic algorithms:
+
+    Clearing a Value: {x} → {0}
+    [-]
+
+    Moving a Value: {x, 0} → {0, x} (We used this algorithm earlier)
+    [->+<]
+
+    Copying a Value: {x, 0, 0} → {x, x, 0}
+    [->+>+<<]>>[-<<+>>]<<
+
+    Addition: {x, y} → {0, x+y}
+    [->+<]
+
+    Subtraction: {x, y} → {x-y, 0}
+    >[-<->]<
+
+    Multiplication: {x, y, 0, 0} → {0, y, x*y, 0}
+    [->[->+>+<<]>>[-<<+>>]<<<]
+
+    Exponentiation: {x, y, 0, 0, 0} → {x, 0, pow(x, y), 0, 0}
+    >>+<[->[-<<[->>>+>+<<<<]>>>>[-<<<<+>>>>]<<]>[-<+>]<<]<
+
+    Division: {x, y, 0, 0, 0, 0} → {x/y, x%y, 0, 0, 0, 0}
+    [>[->+>+<<]>[-<<-[>]>>>[<[-<->]<[>]>>[[-]>>+<]>-<]<<]>>>+<<[-<<+>>]<<<]
+    >>>>>[-<<<<<+>>>>>]<<<<<
+    Warning: When y=0, an infinite loop will result.
+
+    Loop: loop 10 times
+    ++++++++++[>(dosth)<-]
+
+    Input a value: {0, input}
+    ,[->+<]>
+
+    Move cell0 to cell2: {x,0,0} → {0,0,x}
+    >>[-]<<[->>+<<]
+
+What's more:
+
 More info about BrainFuck: http://en.wikipedia.org/wiki/Brainfuck
+BF Playground: https://minond.xyz/brainfuck/
+BF algorithms: https://esolangs.org/wiki/Brainfuck_algorithms
+BF interpreter written in BF: http://www.iwriteiam.nl/Ha_bf_inter.html
 Other esoteric programming languages: https://esolangs.org/wiki/Language_list
 
 (C) Jayli 2020
 This programm is licensed under the terms of the
 DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE.
-

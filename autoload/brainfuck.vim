@@ -1,7 +1,6 @@
 " File:         autoload/brainfuck.vim
 " Author:       @jayli <http://jayli.github.io>
 " Description:  A Brainfuck Compiler for Vim
-" Basci Useage: https://gist.github.com/robbielynch/e611442ca2d056f3b78f
 
 function! brainfuck#exec()
     let Interpreter = s:InitInterpreter(s:GetSourceCode())
@@ -13,6 +12,7 @@ function! brainfuck#interpreter(source_code)
 endfunction
 
 function! s:ClearComment(line)
+    " TODO # Stop and show Log
     let line = substitute(a:line,"\\(\/\/\\|\\w\\|\\#\\|\\*\\).\\+", "", "g")
     let line = substitute(line, "[^><+-.,\\[\\]]", "", "g")
     let line = trim(line)
@@ -40,6 +40,10 @@ function! s:InitBuf()
     let Buf.array = [0]
     let Buf.ptr = 0
 
+    " ASCII   255
+    " Unicode 65535
+    let Buf.bit = 65535
+
     function Buf.move(n)
         let self.ptr += a:n
         call self.fullfill()
@@ -57,8 +61,7 @@ function! s:InitBuf()
 
     function Buf.increment()
         let self.array[self.ptr] += 1
-        " 字符计算限制在 ASCII 码长度以内
-        if self.array[self.ptr] >= 65535
+        if self.array[self.ptr] >= self.bit 
             let self.array[self.ptr] = 0
         endif
     endfunction
@@ -66,7 +69,7 @@ function! s:InitBuf()
     function Buf.decrement()
         let self.array[self.ptr] -= 1
         if self.array[self.ptr] < 0
-            let self.array[self.ptr] = 65535
+            let self.array[self.ptr] = self.bit 
         endif
     endfunction
 
@@ -270,7 +273,7 @@ function! s:InitInterpreter(source_code)
     return Interpreter
 endfunction
 
-" print logs
+" Print logs
 function! s:log(msg)
     call s:msg(a:msg, "Question")
 endfunction
