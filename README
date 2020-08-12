@@ -1,6 +1,6 @@
 A BrainFuck Compiler Plugin for VIM
 
-Brainfuck is an eight-instruction turing-complete programming language. I emplement a small Brainfuck interpreter in pure VIM script. It's based on VIM 8.1 and offers you a really simple playground for brainfuck language.
+Brainfuck is an eight-instruction turing-complete programming language. I emplement a small Brainfuck interpreter in pure VIM script. It's based on VIM 8.1 and offers you a really simple playground.
 
 Install with Pathogen, execute the following commands:
 
