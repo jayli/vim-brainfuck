@@ -7,10 +7,6 @@ function! brainfuck#exec()
     call Interpreter.execute()
 endfunction
 
-function! brainfuck#interpreter(source_code)
-    return s:InitInterpreter(a:source_code)
-endfunction
-
 function! s:ClearComment(line)
     " TODO # Stop and show Log
     let line = substitute(a:line,"\\(\/\/\\|\\w\\|\\#\\|\\*\\).\\+", "", "g")
@@ -61,7 +57,7 @@ function! s:InitBuf()
 
     function Buf.increment()
         let self.array[self.ptr] += 1
-        if self.array[self.ptr] >= self.bit 
+        if self.array[self.ptr] >= self.bit
             let self.array[self.ptr] = 0
         endif
     endfunction
@@ -69,7 +65,7 @@ function! s:InitBuf()
     function Buf.decrement()
         let self.array[self.ptr] -= 1
         if self.array[self.ptr] < 0
-            let self.array[self.ptr] = self.bit 
+            let self.array[self.ptr] = self.bit
         endif
     endfunction
 
