@@ -20,7 +20,6 @@ For example, Copy this program to your vim editor and exec ":BrainFuck"
 It will output "Hello World!".
 
 More info about BrainFuck: http://en.wikipedia.org/wiki/Brainfuck
-
 Other esoteric programming languages: https://esolangs.org/wiki/Language_list
 
 (C) Jayli 2020
