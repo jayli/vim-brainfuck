@@ -58,7 +58,7 @@ function! s:InitBuf()
     function Buf.increment()
         let self.array[self.ptr] += 1
         " 字符计算限制在 ASCII 码长度以内
-        if self.array[self.ptr] >= 255
+        if self.array[self.ptr] >= 65535
             let self.array[self.ptr] = 0
         endif
     endfunction
@@ -66,7 +66,7 @@ function! s:InitBuf()
     function Buf.decrement()
         let self.array[self.ptr] -= 1
         if self.array[self.ptr] < 0
-            let self.array[self.ptr] = 255
+            let self.array[self.ptr] = 65535
         endif
     endfunction
 
