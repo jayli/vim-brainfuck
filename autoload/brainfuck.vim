@@ -3,15 +3,19 @@
 " Description:  A Brainfuck Compiler for Vim
 
 function! brainfuck#exec()
-    let Interpreter = s:InitInterpreter(s:GetSourceCode())
+    let Interpreter = s:InitInterpreter()
     call Interpreter.execute()
 endfunction
 
 function! s:ClearComment(line)
-    " TODO # Stop and show Log
-    let line = substitute(a:line,"\\(\/\/\\|\\w\\|\\#\\|\\*\\).\\+", "", "g")
-    let line = substitute(line, "[^><+-.,\\[\\]]", "", "g")
-    let line = trim(line)
+    " TODO $ Just show Log
+    " TODO | Stop and show log
+    let line = trim(substitute(a:line,"\\(\/\/\\|\\w\\|\\#\\|\\*\\).\\+", "", "g"))
+    return line
+endfunction
+
+function! s:GetSourceMapLine(line)
+    let line = trim(substitute(a:line, "[^><+-.,\\[\\]$|]", "", "g"))
     return line
 endfunction
 
@@ -19,14 +23,14 @@ function! s:HasInputOperator(source_code)
     return index(str2list(a:source_code), 44) >= 0 ? 1 : 0
 endfunction
 
-function! s:GetSourceCode()
+function! s:GetSourceMapCode()
     let sourcecode_list= []
     let lines = getbufline(bufnr(''), 1 ,"$")
     for line in lines
         if trim(line) == ""
             continue
         endif
-        call add(sourcecode_list, substitute(s:ClearComment(line)," ","","g"))
+        call add(sourcecode_list, substitute(s:GetSourceMapLine(s:ClearComment(line))," ","","g"))
     endfor
     return join(sourcecode_list, "")
 endfunction
@@ -102,9 +106,11 @@ function! s:InitBuf()
     return Buf
 endfunction
 
-function! s:InitProgram(source_code)
+function! s:InitProgram(source_map_code)
     let Program = {}
-    let Program.program = a:source_code
+    " TODO here jayli 处理 source map code 新增log和exit语句
+    let Program.program_source_map = a:source_map_code
+    let Program.program = substitute(a:source_map_code, "\\(\\$\\||\\)", "", "g")
     let Program.pos = 0
 
     function! Program.advance(n)
@@ -140,9 +146,10 @@ function! s:InitProgram(source_code)
     return Program
 endfunction
 
-function! s:InitInputStream(source_code)
+function! s:InitInputStream(source_map_code)
     let InputStream = {}
-    let InputStream.source_code = a:source_code
+    let InputStream.source_code = substitute(a:source_map_code, "\\(\\$\\||\\)", "", "g")
+    let InputStream.source_map_code = a:source_map_code
     let InputStream.array = []
 
     function InputStream.input()
@@ -169,7 +176,7 @@ function! s:InitInputStream(source_code)
     return InputStream
 endfunction
 
-function! s:InitInterpreter(source_code)
+function! s:InitInterpreter()
     let Interpreter = {
         \   "INC_PTR"        : ">",
         \   "DEC_PTR"        : "<",
@@ -181,9 +188,10 @@ function! s:InitInterpreter(source_code)
         \   "JUMP_BACKWARD"  : "]"
         \ }
 
+    let source_map_code = s:GetSourceMapCode()
     let Interpreter.buffer = s:InitBuf()
-    let Interpreter.program = s:InitProgram(a:source_code)
-    let Interpreter.inputstream = s:InitInputStream(a:source_code)
+    let Interpreter.program = s:InitProgram(source_map_code)
+    let Interpreter.inputstream = s:InitInputStream(source_map_code)
 
     function Interpreter.handle_inc_ptr()
         call self.buffer.move(1)
