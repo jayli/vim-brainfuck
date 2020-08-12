@@ -7,7 +7,7 @@ Install with Pathogen, execute the following commands:
     cd ~/.vim/bundle/
     git clone https://github.com/jayli/vim-brainfuck
 
-Useage:
+Useage: Run this command in vim
 
     :BrainFuck
 
@@ -19,8 +19,9 @@ For example, Copy this program to your vim editor and exec ":BrainFuck"
 
 It will output "Hello World!".
 
-More info about BrainFuck: <http://en.wikipedia.org/wiki/Brainfuck>
-Other esoteric programming languages: <https://esolangs.org/wiki/Language_list>
+More info about BrainFuck: http://en.wikipedia.org/wiki/Brainfuck
+
+Other esoteric programming languages: https://esolangs.org/wiki/Language_list
 
 (C) Jayli 2020
 This programm is licensed under the terms of the
