@@ -35,9 +35,6 @@ function! s:GetSourceCode()
 endfunction
 
 function! s:InitBuf()
-    " TODO here
-    " 这里的加减方法应该是位的加减，比如0 - 1 = 255
-    " https://www.jianshu.com/p/a7e7f2b26125
     let Buf = {}
     let Buf.array = [0]
     let Buf.ptr = 0
@@ -59,7 +56,7 @@ function! s:InitBuf()
 
     function Buf.increment()
         let self.array[self.ptr] += 1
-        " todo 这里需要更多测试
+        " 字符计算限制在 ASCII 码长度以内
         if self.array[self.ptr] >= 255
             let self.array[self.ptr] = 0
         endif
@@ -67,7 +64,6 @@ function! s:InitBuf()
 
     function Buf.decrement()
         let self.array[self.ptr] -= 1
-        " todo 这里需要更多测试
         if self.array[self.ptr] < 0
             let self.array[self.ptr] = 255
         endif
@@ -174,7 +170,6 @@ function! s:InitInputStream(source_code)
 endfunction
 
 function! s:InitInterpreter(source_code)
-
     let Interpreter = {
         \   "INC_PTR"        : ">",
         \   "DEC_PTR"        : "<",
@@ -274,6 +269,7 @@ function! s:InitInterpreter(source_code)
     return Interpreter
 endfunction
 
+" print logs
 function! s:log(msg)
     call s:msg(a:msg, "Question")
 endfunction
