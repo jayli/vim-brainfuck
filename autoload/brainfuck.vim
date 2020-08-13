@@ -28,7 +28,8 @@ function! s:GetSourceMapCode()
         if trim(line) == ""
             continue
         endif
-        call add(sourcecode_list, substitute(s:GetSourceMapLine(s:ClearComment(line))," ","","g"))
+        let source_map_line = s:GetSourceMapLine(s:ClearComment(line))
+        call add(sourcecode_list, substitute(source_map_line," ","","g"))
     endfor
     return join(sourcecode_list, "")
 endfunction
@@ -296,19 +297,21 @@ function! s:InitInterpreter()
         let op_handler[self.JUMP_FORWARD]  = self.handle_jump_forward
         let op_handler[self.JUMP_BACKWARD] = self.handle_jump_backward
 
-        let g:kk = self.pipe_positions
-
+        let step = 0
         while !self.program.eof()
+            let step += 1
             let current_opt = self.program.current()
             let Handler = get(op_handler, current_opt)
             call Handler()
             if self.meet_dollor()
                 call self.log()
+                call s:log('Exec Steps:    '. step)
                 call s:debug('------ Meet Dollor: Stop ------')
                 return
             endif
             if self.meet_pipe()
                 call self.log()
+                call s:log('Exec Steps:    '. step)
                 call s:debug('------  Meet Pipe: Log  ------')
             endif
             call self.program.advance(1)
