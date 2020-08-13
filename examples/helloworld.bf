@@ -5,7 +5,7 @@
     > +++                   add  3 to cell #3
     > +                     add  1 to cell #4
     <<<< -                  decrement counter (cell #0)
-]                   
+]
 > ++ .                  print 'H'
 > + .                   print 'e'
 +++++ ++ .              print 'l'

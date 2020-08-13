@@ -138,7 +138,7 @@ function! s:InitProgram(source_map_code)
     function! Program.advance(n)
         let self.pos += a:n
         if self.pos < 0
-            call s:waring("Buffer 回退越界: Program.pos < 0")
+            call s:warning("Buffer 回退越界: Program.pos < 0")
         endif
     endfunction
 
@@ -182,9 +182,13 @@ function! s:InitInputStream(source_map_code)
             return
         endif
 
-        let ipt = input("Input: ")
-        let self.array = str2list(ipt)
         redraw
+        let ipt = input("Input: ")
+        if char2nr(ipt) == 0
+            let self.array = [char2nr(ipt)]
+        else
+            let self.array = str2list(ipt)
+        endif
     endfunction
 
     function InputStream.get_one_input()
@@ -219,6 +223,7 @@ function! s:InitInterpreter()
     let Interpreter.inputstream = s:InitInputStream(source_map_code)
     let Interpreter.dollor_positions = s:GetDollorPositions(source_map_code)
     let Interpreter.pipe_positions = s:GetPipePositions(source_map_code)
+    let Interpreter.exec_time = has("reltime") ? reltime() : localtime()
 
     function Interpreter.meet_dollor()
         return index(self.dollor_positions, self.program.pos + 1) > -1
@@ -253,7 +258,7 @@ function! s:InitInterpreter()
     endfunction
 
     function Interpreter.handle_jump_forward()
-        if self.buffer.current == 0
+        if self.buffer.current() == 0
             let cursor = 1
             while cursor > 0
                 call self.program.advance(1)
@@ -297,15 +302,23 @@ function! s:InitInterpreter()
         let op_handler[self.JUMP_FORWARD]  = self.handle_jump_forward
         let op_handler[self.JUMP_BACKWARD] = self.handle_jump_backward
 
-        let step = 0
+        let step = -1
         while !self.program.eof()
-            let step += 1
             let current_opt = self.program.current()
             let Handler = get(op_handler, current_opt)
             call Handler()
+            let step += 1
             if self.meet_dollor()
                 call self.log()
                 call s:log('Exec Steps:    '. step)
+                if has("reltime")
+                    let spend_time = reltimefloat(reltime(self.exec_time))
+                    let spend_time = round(spend_time * 1000) / 1000
+                    let exec_time = string(spend_time) . 's'
+                else
+                    let exec_time = string(localtime() - self.exec_tim) . 's'
+                endif
+                call s:log('Exec Times:    '. exec_time)
                 call s:debug('------ Meet Dollor: Stop ------')
                 return
             endif
