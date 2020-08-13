@@ -19,6 +19,25 @@ For example, Copy this program to your vim editor and exec ":BrainFuck"
 
 It will output "Hello World!".
 
+Print program memory: Insert '|' into your source code to print memory. Insert '$' to print memory and terminate the program. For example:
+
+    +++>|++>+|>$---
+
+This code will print these logs:
+
+    >>> ====== Interpreter State ======
+    >>> Program:       +++(>)++>+>---
+    >>> Buffer Array:  3 *0
+    >>> ------  Meet Pipe: Log  ------
+    >>> ====== Interpreter State ======
+    >>> Program:       +++>++>(+)>---
+    >>> Buffer Array:  3 2 *1
+    >>> ------  Meet Pipe: Log  ------
+    >>> ====== Interpreter State ======
+    >>> Program:       +++>++>+(>)---
+    >>> Buffer Array:  3 2 1 *0
+    >>> ------ Meet Dollor: Stop ------
+
 BF basic algorithms:
 
     Clearing a Value: {x} → {0}

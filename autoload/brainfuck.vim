@@ -8,8 +8,6 @@ function! brainfuck#exec()
 endfunction
 
 function! s:ClearComment(line)
-    " TODO $ Just show Log
-    " TODO | Stop and show log
     let line = trim(substitute(a:line,"\\(\/\/\\|\\w\\|\\#\\|\\*\\).\\+", "", "g"))
     return line
 endfunction
@@ -106,15 +104,41 @@ function! s:InitBuf()
     return Buf
 endfunction
 
+" exclude: 排除干扰的字符
+" include: 要记录的字符
+" return:  返回要记录的字符位置的数组
+function! s:GetMarkPositions(source_map_code, exclude, include)
+    let t_source = substitute(a:source_map_code, a:exclude, "", "g")
+    let cursor = 0
+    let positions = []
+    while cursor < len(t_source)
+        if t_source[cursor] == a:include
+            let positions += [cursor - len(positions)]
+        endif
+        let cursor += 1
+    endwhile
+    return positions
+endfunction
+
+function! s:GetDollorPositions(source_map_code)
+    return s:GetMarkPositions(a:source_map_code, "|", "$")
+endfunction
+
+function! s:GetPipePositions(source_map_code)
+    return s:GetMarkPositions(a:source_map_code, "$", "|")
+endfunction
+
 function! s:InitProgram(source_map_code)
     let Program = {}
-    " TODO here jayli 处理 source map code 新增log和exit语句
     let Program.program_source_map = a:source_map_code
     let Program.program = substitute(a:source_map_code, "\\(\\$\\||\\)", "", "g")
     let Program.pos = 0
 
     function! Program.advance(n)
         let self.pos += a:n
+        if self.pos < 0
+            call s:waring("Buffer 回退越界: Program.pos < 0")
+        endif
     endfunction
 
     function Program.current()
@@ -192,6 +216,16 @@ function! s:InitInterpreter()
     let Interpreter.buffer = s:InitBuf()
     let Interpreter.program = s:InitProgram(source_map_code)
     let Interpreter.inputstream = s:InitInputStream(source_map_code)
+    let Interpreter.dollor_positions = s:GetDollorPositions(source_map_code)
+    let Interpreter.pipe_positions = s:GetPipePositions(source_map_code)
+
+    function Interpreter.meet_dollor()
+        return index(self.dollor_positions, self.program.pos + 1) > -1
+    endfunction
+
+    function Interpreter.meet_pipe()
+        return index(self.pipe_positions, self.program.pos + 1) > -1
+    endfunction
 
     function Interpreter.handle_inc_ptr()
         call self.buffer.move(1)
@@ -262,16 +296,23 @@ function! s:InitInterpreter()
         let op_handler[self.JUMP_FORWARD]  = self.handle_jump_forward
         let op_handler[self.JUMP_BACKWARD] = self.handle_jump_backward
 
+        let g:kk = self.pipe_positions
+
         while !self.program.eof()
             let current_opt = self.program.current()
             let Handler = get(op_handler, current_opt)
             call Handler()
+            if self.meet_dollor()
+                call self.log()
+                call s:debug('------ Meet Dollor: Stop ------')
+                return
+            endif
+            if self.meet_pipe()
+                call self.log()
+                call s:debug('------  Meet Pipe: Log  ------')
+            endif
             call self.program.advance(1)
-            " call self.log()
         endwhile
-
-        call self.log()
-        call s:warning('====== EOF ======')
     endfunction
 
     return Interpreter
@@ -280,6 +321,10 @@ endfunction
 " Print logs
 function! s:log(msg)
     call s:msg(a:msg, "Question")
+endfunction
+
+function! s:debug(msg)
+    call s:msg(a:msg, "Title")
 endfunction
 
 function! s:warning(msg)
