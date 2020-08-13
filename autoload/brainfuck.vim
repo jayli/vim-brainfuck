@@ -138,7 +138,7 @@ function! s:InitProgram(source_map_code)
     function! Program.advance(n)
         let self.pos += a:n
         if self.pos < 0
-            call s:warning("Buffer 回退越界: Program.pos < 0")
+            call s:warning("Buffer out of range: Program.pos < 0")
         endif
     endfunction
 
