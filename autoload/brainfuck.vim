@@ -339,6 +339,7 @@ function! s:log(msg)
     call s:msg(a:msg, "Question")
 endfunction
 
+" Print debug logs
 function! s:debug(msg)
     call s:msg(a:msg, "Title")
 endfunction
