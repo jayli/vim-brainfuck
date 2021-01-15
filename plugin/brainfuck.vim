@@ -3,10 +3,10 @@
 " Description:  init file
 
 if version < 800
-    finish
+  finish
 endif
 
 if has( 'vim_starting' )
-    command! -nargs=0 -complete=command BrainFuck call brainfuck#exec()
-    autocmd BufRead,BufNewFile *.bf set filetype=css
+  command! -nargs=0 -complete=command BrainFuck call brainfuck#exec()
+  autocmd BufRead,BufNewFile *.bf set filetype=css
 endif
