@@ -7,6 +7,6 @@ if version < 800
 endif
 
 if has( 'vim_starting' )
-  command! -nargs=0 BrainFuck call brainfuck#exec()
+  command! -nargs=? BrainFuck call brainfuck#exec()
   autocmd BufRead,BufNewFile *.bf set filetype=css
 endif
