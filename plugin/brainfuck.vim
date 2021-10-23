@@ -8,5 +8,5 @@ endif
 
 if has( 'vim_starting' )
   command! -nargs=0 BrainFuck call brainfuck#exec()
-  autocmd BufRead,BufNewFile *.bf set filetype=css
+  autocmd BufRead,BufNewFile *.bf set filetype=brainfuck
 endif
